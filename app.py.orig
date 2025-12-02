@@ -8,7 +8,7 @@ import threading
 
 app = Flask(__name__)
 app.config['DEBUG'] = False
-CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5000"]}})
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5000"], "methods": ["GET", "POST", "DELETE"]}})
 
 # Sample data
 class UserData:
@@ -39,7 +39,8 @@ limiter = Limiter(
     default_limits=["200 per day", "50 per hour"]
 )
 
-@app.route('/')
+@app.route('/', methods=['GET'])
+@limiter.limit("10 per minute")
 def home():
     return render_template('index.html')
 
@@ -91,5 +92,12 @@ def handle_exception(error):
     logging.error(error)
     return jsonify({"message": "Internal server error"}), 500
 
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.ERROR)
     app.run(port=5000)
