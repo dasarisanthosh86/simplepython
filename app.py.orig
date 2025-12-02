@@ -18,6 +18,7 @@ class UserData:
             {"id": 2, "name": "Jane Smith", "email": "jane@example.com"}
         ]
         self.lock = threading.Lock()
+        self.id_counter = 2
 
     def get_users(self):
         with self.lock:
@@ -26,6 +27,7 @@ class UserData:
     def add_user(self, new_user):
         with self.lock:
             self.users.append(new_user)
+            self.id_counter += 1
 
     def delete_user(self, user_id):
         with self.lock:
@@ -55,14 +57,16 @@ def get_users():
 @limiter.limit("5 per minute")
 def add_user():
     data = request.get_json()
-    if not data or 'name' not in data or 'email' not in data:
+    if not data:
         abort(400)
+    if 'name' not in data or 'email' not in data:
+        return jsonify({"message": "Name and email are required"}), 400
     try:
         validate_email(data['email'])
     except EmailNotValidError:
-        abort(400)
+        return jsonify({"message": "Invalid email"}), 400
     new_user = {
-        "id": len(user_data.get_users()) + 1,
+        "id": user_data.id_counter + 1,
         "name": data['name'],
         "email": data['email']
     }
@@ -75,7 +79,7 @@ def delete_user(user_id):
     users = user_data.get_users()
     user_to_delete = next((user for user in users if user['id'] == user_id), None)
     if user_to_delete is None:
-        abort(404)
+        return jsonify({"message": "User not found"}), 404
     user_data.delete_user(user_id)
     return jsonify({"message": "User deleted"}), 200
 

@@ -10,7 +10,6 @@ app = Flask(__name__)
 app.config['DEBUG'] = False
 CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5000"], "methods": ["GET", "POST", "DELETE"]}})
 
-# Sample data
 class UserData:
     def __init__(self):
         self.users = [
@@ -58,7 +57,7 @@ def get_users():
 def add_user():
     data = request.get_json()
     if not data:
-        abort(400)
+        return jsonify({"message": "No data provided"}), 400
     if 'name' not in data or 'email' not in data:
         return jsonify({"message": "Name and email are required"}), 400
     try:
