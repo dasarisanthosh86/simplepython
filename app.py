@@ -40,10 +40,13 @@ limiter = Limiter(
     default_limits=["200 per day", "50 per hour"]
 )
 
-@app.route('/', methods=['GET'])
+@app.route('/', methods=['GET', 'POST', 'PUT', 'DELETE'])
 @limiter.limit("10 per minute")
 def home():
-    return render_template('index.html')
+    if request.method == 'GET':
+        return render_template('index.html')
+    else:
+        return jsonify({"message": "Method not allowed"}), 405
 
 @app.route('/api/users', methods=['GET'])
 @limiter.limit("10 per minute")
